@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Properties;
 
 /**
@@ -19,13 +18,13 @@ public class FileProducer {
 
     private KafkaProducer<byte[], byte[]> kafkaProducer;
 
-    public void produceData(String file_path, String topic, int partition) {
+    public void produceData(String filePath, String topic, int partition) {
 
-        File file = new File(file_path);
-        FileInputStream input = null;
+        File file = new File(filePath);
 
-        try {
-            input = new FileInputStream(file);
+        try (
+                FileInputStream input = new FileInputStream(file)
+        ) {
             byte[] buffer = new byte[(int) file.length()];
 
             // 将数据读取到内存中
@@ -37,20 +36,11 @@ public class FileProducer {
             for (String record :
                     records) {
                 kafkaProducer.send(
-                        new ProducerRecord<byte[], byte[]>(
+                        new ProducerRecord<>(
                                 topic, partition, (partition + "").getBytes("UTF-8"), record.getBytes("UTF-8"))).get();
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), "数据上传失败！");
-        } finally {
-            try {
-                if (null != input)
-                    input.close();
-            } catch (IOException e) {
-                logger.error(e.getMessage(), "流关闭异常！");
-            } finally {
-                input = null;
-            }
         }
     }
 
@@ -66,7 +56,6 @@ public class FileProducer {
         props.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 
-        KafkaProducer<byte[], byte[]> producer = new KafkaProducer<>(props);
-        this.kafkaProducer = producer;
+        this.kafkaProducer = new KafkaProducer<>(props);
     }
 }

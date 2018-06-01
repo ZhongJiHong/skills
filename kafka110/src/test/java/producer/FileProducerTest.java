@@ -13,6 +13,6 @@ public class FileProducerTest {
 
         FileProducer producer = new FileProducer("kafka03:19093");
         // partition 0
-        producer.produceData("D:\\tf_f_user_item.txt", "test", 0);
+        producer.produceData("D:\\tf_f_user_item.txt", "goe001", 0);
     }
 }

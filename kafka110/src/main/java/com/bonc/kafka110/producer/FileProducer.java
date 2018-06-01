@@ -40,7 +40,7 @@ public class FileProducer {
                                 topic, partition, (partition + "").getBytes("UTF-8"), record.getBytes("UTF-8"))).get();
             }
         } catch (Exception e) {
-            logger.error(e.getMessage(), "数据上传失败！");
+            logger.error(e.getMessage());
         }
     }
 

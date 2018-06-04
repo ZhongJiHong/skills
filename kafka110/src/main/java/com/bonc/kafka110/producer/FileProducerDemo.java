@@ -14,9 +14,9 @@ import java.util.Properties;
  * <p>
  * 这是一个Demo
  */
-public class FileProducer {
+public class FileProducerDemo {
 
-    private static Logger logger = LoggerFactory.getLogger(FileProducer.class);
+    private static Logger logger = LoggerFactory.getLogger(FileProducerDemo.class);
 
     private KafkaProducer<byte[], byte[]> kafkaProducer;
 
@@ -56,7 +56,7 @@ public class FileProducer {
     /**
      * @param bootstrap - Kafka服务节点
      */
-    public FileProducer(String bootstrap) {
+    public FileProducerDemo(String bootstrap) {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrap);

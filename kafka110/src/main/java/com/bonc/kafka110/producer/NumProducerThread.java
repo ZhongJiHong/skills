@@ -7,22 +7,20 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.Properties;
 
 /**
  * created by G.Goe on 2018/6/1
  */
-public class FileProducerThread implements Runnable {
+public class NumProducerThread implements Runnable {
 
-    private static Logger logger = LoggerFactory.getLogger(FileProducerThread.class);
+    private static Logger logger = LoggerFactory.getLogger(RecordsProducerThread.class);
 
     private KafkaProducer<byte[], byte[]> kafkaProducer;
 
     private String topic;
     private int partition;
-    private String filePath;
+    private long recordNum;
 
     /**
      * 异步发送数据，并设置回调函数
@@ -30,36 +28,14 @@ public class FileProducerThread implements Runnable {
     @Override
     public void run() {
 
-        File file = new File(filePath);
-        byte[] buffer = null;
-
-        // 文件数据的解析规则 - 注意不同的数据文件可能有不同的解析规则，需自定义
-        try (
-                FileInputStream input = new FileInputStream(file)
-        ) {
-            buffer = new byte[(int) file.length()];
-
-            // 将数据读取到内存中
-            input.read(buffer);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+        int count = 0;
+        while (count < recordNum) {
+            kafkaProducer.send(new ProducerRecord<>(topic, partition, ("" + partition).getBytes(), ("key是分区号，value是写死的，就像这样！").getBytes()),
+                    new CustomCallback()); // 发送 - 传入回调对象
+            count++;
         }
-
-        String data = new String(buffer);
-        String[] records = data.split("\\r");
-
-        // 发送解析的数据
-        for (String record :
-                records) {
-            kafkaProducer.send(
-                    new ProducerRecord<>(
-                            topic, partition, (partition + "").getBytes(), record.getBytes()),
-                    new CustomCallback());
-        }
-
-        // 此方法是阻塞的
         kafkaProducer.close();
-        logger.info("{}s records has been send to Kafka!", records.length);
+        logger.info("{} records has been send to Kafka !", recordNum);
     }
 
     /**
@@ -85,9 +61,9 @@ public class FileProducerThread implements Runnable {
      * @param clientId  - 客户端id
      * @param topic     - 主题
      * @param partition - 分区
-     * @param filePath  - 文件路径
+     * @param recordNum - 发送的数据量
      */
-    public FileProducerThread(String bootstrap, String clientId, String topic, int partition, String filePath) {
+    public NumProducerThread(String bootstrap, String clientId, String topic, int partition, long recordNum) {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrap);
@@ -102,7 +78,7 @@ public class FileProducerThread implements Runnable {
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 
         this.kafkaProducer = new KafkaProducer<>(props);
-        this.filePath = filePath;
+        this.recordNum = recordNum;
         this.topic = topic;
         this.partition = partition;
     }

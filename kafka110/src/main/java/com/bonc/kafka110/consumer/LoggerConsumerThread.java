@@ -15,10 +15,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * created by G.Goe on 2018/6/1
  */
-public class ConsumerThread implements Callable<Void> {
+public class LoggerConsumerThread implements Callable<Void> {
 
-    private static Logger logger = LoggerFactory.getLogger(ConsumerThread.class);
+    private static Logger logger = LoggerFactory.getLogger(LoggerConsumerThread.class);
     private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    private static long count = 0;
 
     private KafkaConsumer<byte[], byte[]> kafkaConsumer;
     private String topic;
@@ -30,9 +32,11 @@ public class ConsumerThread implements Callable<Void> {
         TopicPartition topicPartition = new TopicPartition(topic, partition);
         kafkaConsumer.assign(Collections.singletonList(topicPartition));
         kafkaConsumer.seek(topicPartition, beginningOffset);
+
         try {
             while (!closed.get()) {
 
+                // if (count < 1999999) {  /*Kafka消费测试*/
                 // 拉取消息
                 ConsumerRecords<byte[], byte[]> records = kafkaConsumer.poll(500);
                 // 处理消息
@@ -40,18 +44,23 @@ public class ConsumerThread implements Callable<Void> {
                         records) {
                     // Handle new records
                     // 格式化打印到控制台
-                    /*System.out.printf("CurrentThread:%s,Topic:%s,partition:%d,offsets:%d,key-value:%s",
-                            Thread.currentThread().toString(), topicPartition.topic(), topicPartition.partition(),
-                            record.offset(), new String(record.key(), "UTF-8") + "=" + new String(record.value(), "UTF-8") + "\r\n");*/
+                        /*System.out.printf("CurrentThread:%s,Topic:%s,partition:%d,offsets:%d,key-value:%s",
+                                Thread.currentThread().toString(), topicPartition.topic(), topicPartition.partition(),
+                                record.offset(), new String(record.key(), "UTF-8") + "=" + new String(record.value(), "UTF-8") + "\r\n");*/
 
                     logger.info(String.format("CurrentThread:%s,Topic:%s,partition:%d,offsets:%d,key-value:%s",
                             Thread.currentThread().toString(), topicPartition.topic(), topicPartition.partition(),
                             record.offset(), new String(record.key(), "UTF-8") + "=" + new String(record.value(), "UTF-8") + "\r\n"));
 
-                    Thread.sleep(10);
+                    // Thread.sleep(10);
+                    count++;
                 }
                 // 手动提交偏移量
                 kafkaConsumer.commitSync();
+                // } else {
+                //     shutdown();
+                // }
+
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -78,7 +87,7 @@ public class ConsumerThread implements Callable<Void> {
      * @param partition       - 分区号
      * @param beginningOffset - 消费起始偏移量
      */
-    public ConsumerThread(String bootstrap, String groupId, String topic, int partition, long beginningOffset) {
+    public LoggerConsumerThread(String bootstrap, String groupId, String topic, int partition, long beginningOffset) {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrap);

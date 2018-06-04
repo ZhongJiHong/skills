@@ -12,15 +12,15 @@ import java.util.Properties;
 /**
  * created by G.Goe on 2018/6/1
  */
-public class ProducerThread implements Runnable {
+public class RecordsProducerThread implements Runnable {
 
-    private static Logger logger = LoggerFactory.getLogger(FileProducerThread.class);
+    private static Logger logger = LoggerFactory.getLogger(RecordsProducerThread.class);
 
     private KafkaProducer<byte[], byte[]> kafkaProducer;
 
     private String topic;
     private int partition;
-    private long recordNum;
+    private String[] records;
 
     /**
      * 异步发送数据，并设置回调函数
@@ -28,14 +28,18 @@ public class ProducerThread implements Runnable {
     @Override
     public void run() {
 
-        int count = 0;
-        while (count < recordNum) {
-            kafkaProducer.send(new ProducerRecord<>(topic, partition, ("" + partition).getBytes(), ("key是分区号，value是写死的，就像这样！").getBytes()),
-                    new CustomCallback()); // 发送 - 传入回调对象
-            count++;
+        // 发送解析的数据
+        for (String record :
+                records) {
+            kafkaProducer.send(
+                    new ProducerRecord<>(
+                            topic, partition, (partition + "").getBytes(), record.getBytes()),
+                    new CustomCallback());
         }
+
+        // 此方法是阻塞的
         kafkaProducer.close();
-        logger.info("{} records has been send to Kafka !", recordNum);
+        logger.info("{}s records has been send to Kafka!", records.length);
     }
 
     /**
@@ -61,9 +65,9 @@ public class ProducerThread implements Runnable {
      * @param clientId  - 客户端id
      * @param topic     - 主题
      * @param partition - 分区
-     * @param recordNum - 发送的数据量
+     * @param records   - 数据记录
      */
-    public ProducerThread(String bootstrap, String clientId, String topic, int partition, long recordNum) {
+    public RecordsProducerThread(String bootstrap, String clientId, String topic, int partition, String[] records) {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrap);
@@ -78,7 +82,7 @@ public class ProducerThread implements Runnable {
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 
         this.kafkaProducer = new KafkaProducer<>(props);
-        this.recordNum = recordNum;
+        this.records = records;
         this.topic = topic;
         this.partition = partition;
     }

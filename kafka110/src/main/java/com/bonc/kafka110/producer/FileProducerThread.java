@@ -33,6 +33,7 @@ public class FileProducerThread implements Runnable {
         File file = new File(filePath);
         byte[] buffer = null;
 
+        // 文件数据的解析规则 - 注意不同的数据文件可能有不同的解析规则，需自定义
         try (
                 FileInputStream input = new FileInputStream(file)
         ) {
@@ -47,6 +48,7 @@ public class FileProducerThread implements Runnable {
         String data = new String(buffer);
         String[] records = data.split("\\r");
 
+        // 发送解析的数据
         for (String record :
                 records) {
             kafkaProducer.send(
@@ -55,7 +57,8 @@ public class FileProducerThread implements Runnable {
                     new CustomCallback());
         }
 
-        kafkaProducer.close();  // 为什么没有阻塞
+        // 此方法是阻塞的
+        kafkaProducer.close();
         logger.info("{}s records has been send to Kafka!", records.length);
     }
 

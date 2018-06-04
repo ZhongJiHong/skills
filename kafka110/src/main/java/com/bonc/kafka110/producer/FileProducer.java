@@ -11,6 +11,8 @@ import java.util.Properties;
 
 /**
  * created by G.Goe on 2018/6/1
+ * <p>
+ * 这是一个Demo
  */
 public class FileProducer {
 
@@ -21,29 +23,39 @@ public class FileProducer {
     public void produceData(String filePath, String topic, int partition) {
 
         File file = new File(filePath);
+        byte[] buffer = null;
 
+        // 文件数据的解析规则
         try (
                 FileInputStream input = new FileInputStream(file)
         ) {
-            byte[] buffer = new byte[(int) file.length()];
+            buffer = new byte[(int) file.length()];
 
             // 将数据读取到内存中
-            int len = input.read(buffer);
-
-            String data = new String(buffer, 0, len);
-            String[] records = data.split("\\r");
-
-            for (String record :
-                    records) {
-                kafkaProducer.send(
-                        new ProducerRecord<>(
-                                topic, partition, (partition + "").getBytes("UTF-8"), record.getBytes("UTF-8"))).get();
-            }
+            input.read(buffer);
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error(e.getMessage(), e);
         }
+
+        String data = new String(buffer);
+        String[] records = data.split("\\r");
+
+        // 发送解析的数据
+        for (String record :
+                records) {
+            kafkaProducer.send(
+                    new ProducerRecord<>(
+                            topic, partition, (partition + "").getBytes(), record.getBytes()));
+        }
+
+        // 此方法是阻塞的
+        kafkaProducer.close();
+        logger.info("{}s records has been send to Kafka!", records.length);
     }
 
+    /**
+     * @param bootstrap - Kafka服务节点
+     */
     public FileProducer(String bootstrap) {
 
         Properties props = new Properties();

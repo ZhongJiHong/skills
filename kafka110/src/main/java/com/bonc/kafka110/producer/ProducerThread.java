@@ -30,7 +30,7 @@ public class ProducerThread implements Runnable {
 
         int count = 0;
         while (count < recordNum) {
-            kafkaProducer.send(new ProducerRecord<>(topic, partition, ("" + partition).getBytes(), ("").getBytes()),
+            kafkaProducer.send(new ProducerRecord<>(topic, partition, ("" + partition).getBytes(), ("key是分区号，value是写死的，就像这样！").getBytes()),
                     new CustomCallback()); // 发送 - 传入回调对象
             count++;
         }

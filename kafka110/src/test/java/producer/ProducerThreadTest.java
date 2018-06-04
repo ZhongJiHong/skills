@@ -16,7 +16,7 @@ public class ProducerThreadTest {
 
     private String bootstrap = "172.16.40.116:19093";
     private int nThread = 3;
-    private String topic = "goe001";
+    private String topic = "goe002";
 
     @Test
     public void run() throws InterruptedException {

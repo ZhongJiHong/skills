@@ -8,13 +8,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
 /**
  * created by G.Goe on 2018/6/1
  */
 public class NumProducerThread implements Runnable {
 
-    private static Logger logger = LoggerFactory.getLogger(RecordsProducerThread.class);
+    private static final Logger logger = LoggerFactory.getLogger(RecordsProducerThread.class);
 
     private KafkaProducer<byte[], byte[]> kafkaProducer;
 
@@ -30,8 +31,13 @@ public class NumProducerThread implements Runnable {
 
         int count = 0;
         while (count < recordNum) {
-            kafkaProducer.send(new ProducerRecord<>(topic, partition, ("" + partition).getBytes(), ("key是分区号，value是写死的，就像这样！").getBytes()),
-                    new CustomCallback()); // 发送 - 传入回调对象
+
+            /*kafkaProducer.send(new ProducerRecord<>(topic, partition, ("" + partition).getBytes(), ("key是分区号，value是写死的，就像这样!").getBytes()),
+                    new CustomCallback());*/ // 发送 - 传入回调对象
+            kafkaProducer.send(new ProducerRecord<>(topic, partition,
+                            ("" + partition).getBytes(), ("key是分区号，value是写死的，就像这样!").getBytes()),
+                    new CustomCallback());
+
             count++;
         }
         kafkaProducer.close();
@@ -47,15 +53,17 @@ public class NumProducerThread implements Runnable {
         public void onCompletion(RecordMetadata recordMetadata, Exception e) {
 
             // 此处的处理有待考量
-            if (null != e) {
+            if (e != null) {
                 logger.error("Failed record ：{}", recordMetadata.offset());
                 logger.error(e.getMessage(), e);
+            } else {
+                logger.info("The offset of the record we just sent is: {}", recordMetadata.offset());
             }
         }
     }
 
     /**
-     * 线程类构造函数
+     * 线程类构造函数 - 指定topic,partition，并指定数据量
      *
      * @param bootstrap - Kafka集群
      * @param clientId  - 客户端id
@@ -69,9 +77,12 @@ public class NumProducerThread implements Runnable {
         props.put("bootstrap.servers", bootstrap);
         props.put("client.id", clientId);
 
+        // 设置确认超时时间,默认是30000
+        props.put("request.timeout.ms", 12000);
+
         props.put("acks", "all");
         props.put("retries", 0);
-        props.put("batch.size", 16384);
+        props.put("batch.size", 1000);
         props.put("linger.ms", 1);
         props.put("buffer.memory", 33554432);
         props.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");

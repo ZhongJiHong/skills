@@ -13,30 +13,28 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * created by G.Goe on 2018/6/1
+ * created by G.Goe on 2018/6/5
  */
-public class LoggerConsumerThread implements Callable<Void> {
+public class TransactionalConsumerThread implements Callable<Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(LoggerConsumerThread.class);
+    private static final Logger logger = LoggerFactory.getLogger(TransactionalConsumerThread.class);
     private final AtomicBoolean closed = new AtomicBoolean(false);
-
-    // private static long count = 0;
 
     private KafkaConsumer<byte[], byte[]> kafkaConsumer;
     private String topic;
     private int partition;
-    private long beginningOffset;
 
     @Override
     public Void call() throws Exception {
+
         TopicPartition topicPartition = new TopicPartition(topic, partition);
         kafkaConsumer.assign(Collections.singletonList(topicPartition));
-        kafkaConsumer.seek(topicPartition, beginningOffset);
+        // 从分区的第一个offset开始读取
+        kafkaConsumer.seekToBeginning(Collections.singletonList(topicPartition));
 
         try {
             while (!closed.get()) {
 
-                // if (count < 1999999) {  /*Kafka消费测试*/
                 // 拉取消息
                 ConsumerRecords<byte[], byte[]> records = kafkaConsumer.poll(500);
                 // 处理消息
@@ -53,13 +51,9 @@ public class LoggerConsumerThread implements Callable<Void> {
                             record.offset(), new String(record.key(), "UTF-8") + "=" + new String(record.value(), "UTF-8") + "\r\n"));
 
                     // Thread.sleep(10);
-                    // count++;
                 }
                 // 手动提交偏移量
                 kafkaConsumer.commitSync();
-                // } else {
-                //     shutdown();
-                // }
 
             }
         } catch (Exception e) {
@@ -68,30 +62,16 @@ public class LoggerConsumerThread implements Callable<Void> {
         } finally {
             kafkaConsumer.close();
         }
-
         return null;
     }
 
-    // Shutdown hook which can be called from a separate thread
-    public void shutdown() {
-        closed.set(true);
-        kafkaConsumer.wakeup();
-    }
-
-    /**
-     * 消费线程的构造函数
-     *
-     * @param bootstrap       - Kafka集群
-     * @param groupId         - 消费组id
-     * @param topic           - 主题
-     * @param partition       - 分区号
-     * @param beginningOffset - 消费起始偏移量
-     */
-    public LoggerConsumerThread(String bootstrap, String groupId, String topic, int partition, long beginningOffset) {
+    public TransactionalConsumerThread(String bootstrap, String groupId, String topic, int partition) {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrap);
         props.put("group.id", groupId);
+        // 设置只消费提交的message - 两种isolation levels(筛选级别)read_committed,read_uncommitted
+        props.put("isolation.level", "read_committed");
 
         props.put("enable.auto.commit", "true");
         props.put("auto.commit.interval.ms", "1000");
@@ -101,6 +81,5 @@ public class LoggerConsumerThread implements Callable<Void> {
         this.kafkaConsumer = new KafkaConsumer<>(props);
         this.topic = topic;
         this.partition = partition;
-        this.beginningOffset = beginningOffset;
     }
 }

@@ -14,7 +14,7 @@ import java.util.Properties;
  */
 public class RecordsProducerThread implements Runnable {
 
-    private static Logger logger = LoggerFactory.getLogger(RecordsProducerThread.class);
+    private static final Logger logger = LoggerFactory.getLogger(RecordsProducerThread.class);
 
     private KafkaProducer<byte[], byte[]> kafkaProducer;
 
@@ -51,15 +51,17 @@ public class RecordsProducerThread implements Runnable {
         public void onCompletion(RecordMetadata recordMetadata, Exception e) {
 
             // 此处的处理有待考量
-            if (null != e) {
+            if (e != null) {
                 logger.error("Failed record ：{}", recordMetadata.offset());
                 logger.error(e.getMessage(), e);
+            } else {
+                logger.info("The offset of the record we just sent is: {}", recordMetadata.offset());
             }
         }
     }
 
     /**
-     * 线程类构造函数
+     * 线程类构造函数 - 指定topic,partition,并指定数据记录
      *
      * @param bootstrap - Kafka集群
      * @param clientId  - 客户端id

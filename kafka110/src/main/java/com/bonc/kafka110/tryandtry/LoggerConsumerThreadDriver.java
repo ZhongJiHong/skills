@@ -15,11 +15,12 @@ public class LoggerConsumerThreadDriver {
 
         long start = System.currentTimeMillis();
         String bootstrap = "172.16.40.116:19093";
+        String topic = "goe011";
 
         ExecutorService pool = Executors.newCachedThreadPool();
-        pool.submit(new LoggerConsumerThread(bootstrap, "group001", "goe003", 0, 0L));
-        pool.submit(new LoggerConsumerThread(bootstrap, "group002", "goe003", 1, 0L));
-        pool.submit(new LoggerConsumerThread(bootstrap, "group003", "goe003", 2, 0L));
+        pool.submit(new LoggerConsumerThread(bootstrap, "group01101", topic, 0, 0L));
+        pool.submit(new LoggerConsumerThread(bootstrap, "group01102", topic, 1, 0L));
+        pool.submit(new LoggerConsumerThread(bootstrap, "group01103", topic, 2, 0L));
 
         pool.shutdown();
         pool.awaitTermination(3000, TimeUnit.SECONDS);

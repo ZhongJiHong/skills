@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
+import java.util.concurrent.Future;
 
 /**
  * created by G.Goe on 2018/6/4
@@ -29,23 +30,27 @@ public class IdempotentProducerThread implements Runnable {
     @Override
     public void run() {
 
-        try {
-            for (long i = 0; i < recordNum; i++) {
-                kafkaProducer.send(new ProducerRecord<>(topic, partition, (partition + "").getBytes(), ("这是第" + (i + 1) + "条记录！").getBytes()),
-                        new CustomCallback());
+        for (long i = 0; i < recordNum; i++) {
+            try {
+                /*kafkaProducer.send(new ProducerRecord<>(topic, partition, (partition + "").getBytes(), ("Idempotent Producer测试，这是第" + (i + 1) + "条记录!").getBytes()),
+                        new CustomCallback());*/
+                Future<RecordMetadata> future = kafkaProducer.send(new ProducerRecord<>(topic, partition, (partition + "").getBytes(), ("Idempotent Producer测试，这是第" + (i + 1) + "条记录!").getBytes()));
+                // future.get()
+            } catch (AuthorizationException e) {
+                // it is possible to continue sending after receiving an OutOfOrderSequenceException, but doing so can result in out of order delivery of pending messages.
+                // To ensure proper ordering, you should close the producer and create a new instance.
+                // We can't recover from these exceptions, so our only option is to close the producer and exit.
+                kafkaProducer.close();
+                logger.error(e.getMessage(), e);
+            } catch (OutOfOrderSequenceException e) {
+                logger.error(e.getMessage(), e);
+                logger.error("The record that Occur exception is {}", (i + 1));
+                kafkaProducer.send(new ProducerRecord<>(topic, partition, (partition + "").getBytes(), ("Idempotent Producer测试，Occur OutOfOrderSequenceException!").getBytes()));
+            } catch (KafkaException e) {
+                // For all other exceptions, just abort the transaction and try again.
+                logger.error(e.getMessage(), e);
             }
-        } catch (AuthorizationException | OutOfOrderSequenceException e) {
-            // it is possible to continue sending after receiving an OutOfOrderSequenceException, but doing so can result in out of order delivery of pending messages.
-            // To ensure proper ordering, you should close the producer and create a new instance.
-            // We can't recover from these exceptions, so our only option is to close the producer and exit.
-            kafkaProducer.close();
-            logger.error(e.getMessage(), e);
-        } catch (KafkaException e) {
-            // For all other exceptions, just abort the transaction and try again.
-            kafkaProducer.abortTransaction();
-            logger.error(e.getMessage(), e);
         }
-
         kafkaProducer.close();
         logger.info("{} records has been send to Kafka !", recordNum);
     }
@@ -82,7 +87,8 @@ public class IdempotentProducerThread implements Runnable {
         props.put("bootstrap.servers", bootstrap);
         props.put("client.id", clientId);
 
-        props.put("enable.idempotence", "true");
+        // 启用幂等生产者，会自动设置"acks"为"all","retries"为Integer.MAX_VALUE,不必再设置
+        props.put("enable.idempotence", true);
         // props.put("acks", "all");
         // props.put("retries", 0);
 

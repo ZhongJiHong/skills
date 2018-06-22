@@ -76,4 +76,33 @@ public class RecordsGenerator {
         // 文件数据的解析规则 - 注意不同的数据文件可能有不同的解析规则，需自定义
         return data.split("\\n");
     }
+
+    /**
+     * 以'\r\n'分隔符分隔数据，产生records
+     *
+     * @param filePath - 数据文件本地路径
+     * @return
+     */
+    public static String[] recordFromFile_3(String filePath) {
+
+        File file = new File(filePath);
+
+        byte[] buffer = null;
+
+        try (
+                FileInputStream input = new FileInputStream(file)
+        ) {
+            buffer = new byte[(int) file.length()];
+
+            // 将数据读取到内存中
+            input.read(buffer);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+
+        String data = new String(buffer);
+
+        // 文件数据的解析规则 - 注意不同的数据文件可能有不同的解析规则，需自定义
+        return data.split("\\r\\n");
+    }
 }

@@ -35,7 +35,7 @@ public class NumProducerThread implements Runnable {
             /*kafkaProducer.send(new ProducerRecord<>(topic, partition, ("" + partition).getBytes(), ("key是分区号，value是写死的，就像这样!").getBytes()),
                     new CustomCallback());*/ // 发送 - 传入回调对象
             kafkaProducer.send(new ProducerRecord<>(topic, partition,
-                            ("" + partition).getBytes(), ("key是分区号，value是写死的，就像这样!").getBytes()),
+                            ("" + partition).getBytes(), ("Common Producer性能测试，这是第" + (count + 1) + "条记录!").getBytes()),
                     new CustomCallback());
 
             count++;
@@ -78,11 +78,11 @@ public class NumProducerThread implements Runnable {
         props.put("client.id", clientId);
 
         // 设置确认超时时间,默认是30000
-        props.put("request.timeout.ms", 12000);
+        // props.put("request.timeout.ms", 12000);
 
         props.put("acks", "all");
-        props.put("retries", 0);
-        props.put("batch.size", 1000);
+        props.put("retries", 10);
+        props.put("batch.size", 16384);
         props.put("linger.ms", 1);
         props.put("buffer.memory", 33554432);
         props.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");

@@ -14,6 +14,7 @@ public class FileProducerDriver {
 
     public static void main(String[] args) throws InterruptedException {
 
+        long start = System.currentTimeMillis();
         String bootstrap = "172.16.40.116:19093";
         String[] files = new String[]{"D:\\admin\\item_1.txt", "D:\\admin\\item_2.txt", "D:\\admin\\item_3.txt"};
 
@@ -21,11 +22,14 @@ public class FileProducerDriver {
 
         for (int i = 0; i < files.length; i++) {
             // 此处3 -- 表示topic的分区数
-            pool.submit(new RecordsProducerThread(bootstrap, "client00" + i, "goe001", i % 3,
+            pool.submit(new RecordsProducerThread(bootstrap, "client00" + i, "goe012", i % 3,
                     RecordsGenerator.recordFromFile_1(files[i])));
         }
 
         pool.shutdown();
         pool.awaitTermination(6000, TimeUnit.SECONDS);
+
+        long end = System.currentTimeMillis();
+        System.out.println("生产耗时：" + (end - start));
     }
 }

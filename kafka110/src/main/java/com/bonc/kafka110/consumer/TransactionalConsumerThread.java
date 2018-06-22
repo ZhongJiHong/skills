@@ -30,13 +30,14 @@ public class TransactionalConsumerThread implements Callable<Void> {
         TopicPartition topicPartition = new TopicPartition(topic, partition);
         kafkaConsumer.assign(Collections.singletonList(topicPartition));
         // 从分区的第一个offset开始读取
-        kafkaConsumer.seekToBeginning(Collections.singletonList(topicPartition));
+         kafkaConsumer.seekToBeginning(Collections.singletonList(topicPartition));
+//         kafkaConsumer.subscribe(Collections.singleton(topic));
 
         try {
             while (!closed.get()) {
 
                 // 拉取消息
-                ConsumerRecords<byte[], byte[]> records = kafkaConsumer.poll(500);
+                ConsumerRecords<byte[], byte[]> records = kafkaConsumer.poll(5000);
                 // 处理消息
                 for (ConsumerRecord<byte[], byte[]> record :
                         records) {
@@ -48,8 +49,10 @@ public class TransactionalConsumerThread implements Callable<Void> {
 
                     logger.info(String.format("CurrentThread:%s,Topic:%s,partition:%d,offsets:%d,key-value:%s",
                             Thread.currentThread().toString(), topicPartition.topic(), topicPartition.partition(),
-                            record.offset(), new String(record.key(), "UTF-8") + "=" + new String(record.value(), "UTF-8") + "\r\n"));
-
+                            record.offset(), new String(record.key(), "utf-8") + "=" + new String(record.value(), "utf-8")));
+                    /*logger.info(String.format("CurrentThread:%s,offsets:%d,key-value:%s",
+                            Thread.currentThread().toString(),
+                            record.offset(), new String(record.key(), "UTF-8") + "=" + new String(record.value(), "UTF-8")));*/
                     // Thread.sleep(10);
                 }
                 // 手动提交偏移量
@@ -73,8 +76,8 @@ public class TransactionalConsumerThread implements Callable<Void> {
         // 设置只消费提交的message - 两种isolation levels(筛选级别)read_committed,read_uncommitted
         props.put("isolation.level", "read_committed");
 
-        props.put("enable.auto.commit", "true");
-        props.put("auto.commit.interval.ms", "1000");
+        // props.put("enable.auto.commit", "false");
+        // props.put("auto.commit.interval.ms", "1000");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 

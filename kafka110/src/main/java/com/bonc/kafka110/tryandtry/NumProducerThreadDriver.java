@@ -14,17 +14,17 @@ public class NumProducerThreadDriver {
     public static void main(String[] args) throws InterruptedException {
 
         long start = System.currentTimeMillis();
-        String bootstrap = "172.16.40.116:19093";
-        String topic = "goe002";
+        String bootstrap = "172.16.40.116:29092,172.16.40.116:29093,172.16.40.116:29094,172.16.40.116:29095";
+        String topic = "zhzh";
 
         ExecutorService pool = Executors.newCachedThreadPool();
-        pool.submit(new NumProducerThread(bootstrap, "client001", topic, 0, 1000));
-        pool.submit(new NumProducerThread(bootstrap, "client002", topic, 1, 1000));
-        pool.submit(new NumProducerThread(bootstrap, "client003", topic, 2, 1000));
+        pool.submit(new NumProducerThread(bootstrap, "client001", topic, 3, 500000));
+        // pool.submit(new NumProducerThread(bootstrap, "client002", topic, 1, 500000));
+        // pool.submit(new NumProducerThread(bootstrap, "client003", topic, 2, 500000));
 
         pool.shutdown();
         pool.awaitTermination(3000, TimeUnit.SECONDS);
         long end = System.currentTimeMillis();
-        System.err.println("生产耗时：" + (end - start));
+        System.out.println("生产耗时：" + (end - start));
     }
 }

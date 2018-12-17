@@ -1,7 +1,7 @@
 package sparkstreaming.sink.hbase
 
-import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
-import org.apache.hadoop.hbase.client.{HTable, Put}
+import org.apache.hadoop.hbase._
+import org.apache.hadoop.hbase.client.{ConnectionFactory, HTable, Put}
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.{Seconds, StreamingContext}
@@ -31,7 +31,25 @@ object DataSinkToHbase {
           records => {
             // TODO -- Hbase未测试
             val conf = HBaseConfiguration.create()
-            val customTable = new HTable(conf, TableName.valueOf(tableNmae))
+
+            val conn = ConnectionFactory.createConnection(conf)
+            val admin = conn.getAdmin
+
+            val hTableDescriptor = new HTableDescriptor(TableName.valueOf(tableNmae))
+            hTableDescriptor.addFamily(new HColumnDescriptor("value"))
+            hTableDescriptor.setFlushPolicyClassName("")
+            hTableDescriptor.setMemStoreFlushSize(3 * 1024 * 1024)
+
+            val table = admin.createTable(hTableDescriptor)
+
+            records.foreach {
+              record => {
+                val key = new Put(Bytes.toBytes(record._1))
+                key.add(Bytes.toBytes("value"), Bytes.toBytes("as"), Bytes.toBytes(record._2))
+              }
+            }
+
+            /*val customTable = new HTable(conf, TableName.valueOf(tableNmae))
             customTable.setAutoFlush(false, false)
             customTable.setWriteBufferSize(3 * 1024 * 1024)
             records.foreach {
@@ -41,7 +59,7 @@ object DataSinkToHbase {
                 customTable.put(key)
               }
             }
-            customTable.flushCommits()
+            customTable.flushCommits()*/
           }
         }
       }

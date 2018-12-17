@@ -9,6 +9,7 @@ import org.apache.spark.sql.SparkSession
 object DataSourceFromKafka {
   def main(args: Array[String]): Unit = {
     Logger.getLogger("smart").setLevel(Level.WARN)
+
     val spark = SparkSession
       .builder()
       .appName("kafka source")
@@ -21,7 +22,7 @@ object DataSourceFromKafka {
       .format("kafka")
       .option("kafka.bootstrap.servers", "kafka01:9092,kafka02:9092,kafka03:9092")
       // 关于kafka更多的细节，查看网址 http://spark.apache.org/docs/2.3.0/structured-streaming-kafka-integration.html
-      .option("subscribe", "zjh_spark01，zjh_spark02") // 订阅多个Topic
+      .option("subscribe", "zjh_spark01,zjh_spark02") // 订阅多个Topic
       .load()
 
     val tuples = records.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
